@@ -1,11 +1,13 @@
 # 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot | AI 資料庫副駕駛
 
-[English](#english) | [繁體中文](#繁體中文) demo 此專案95% 以上由 claude 與 gpt產生
+[English](#english) | [繁體中文](#繁體中文) 
 
+
+demo 此專案95% 以上由 claude 與 gpt產生
 ---
-
-<img width="288" height="215" alt="image" src="https://github.com/user-attachments/assets/bcb26e00-2aa5-43b5-a962-e53f48798d04" />
 https://www.youtube.com/watch?v=xbvpvycP0N8
+測試用DB 
+<img width="288" height="215" alt="image" src="https://github.com/user-attachments/assets/bcb26e00-2aa5-43b5-a962-e53f48798d04" />
 
 由於本專案同時應用在 寵物店經營 與 股票資訊分析 的場景中，系統需要頻繁查詢 最新新聞資訊 以及 貓舍相關知識資料。
 
@@ -151,6 +153,3 @@ console.log("Cost:", result.costUSD);
 - **AI Engines**: Anthropic (Claude), OpenAI, and Ollama support.
 
 ---
-
-## 📜 License
-Internal Enterprise License - DBPilot Team.
