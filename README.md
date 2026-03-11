@@ -1,8 +1,8 @@
 # AI Natural Language Database Query Engine | AI 自然語言資料庫查詢引擎
 
-DataPilot is a secure middleware layer that converts natural language into database queries. It safely bridges the gap between Large Language Models (LLMs) and your databases by enforcing strict security guards, preventing destructive operations and system overloads.
+DBPilot is a secure middleware layer that converts natural language into database queries. It safely bridges the gap between Large Language Models (LLMs) and your databases by enforcing strict security guards, preventing destructive operations and system overloads.
 
-DataPilot 是一個安全的中介層，能將自然語言轉換為資料庫查詢語法。它在大型語言模型（Large Language Model, LLM）與您的資料庫之間建立了一道安全防線，透過嚴格的防護機制，防止破壞性操作與系統過載。
+DBPilot 是一個安全的中介層，能將自然語言轉換為資料庫查詢語法。它在大型語言模型（Large Language Model, LLM）與您的資料庫之間建立了一道安全防線，透過嚴格的防護機制，防止破壞性操作與系統過載。
 
 ## 🌟 Why DataPilot? | 核心價值
 
