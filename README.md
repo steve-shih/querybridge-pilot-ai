@@ -5,6 +5,7 @@ AI-Powered Natural Language Database Query Co-Pilot | 自然語言資料庫查�
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![AI Models](https://img.shields.io/badge/AI-Claude%20%7C%20GPT%20%7C%20Ollama-blueviolet?style=for-the-badge)
+
 DBPilot translates **Natural Language** into safe, optimized database queries. It bridges the gap between complex data structures and non-technical stakeholders, significantly **reducing the burden on Developers and Customer Service teams**.
 
 DBPilot 將 **自然語言** 轉換為安全、優化的資料庫查詢。它消除了複雜資料結構與非技術人員之間的溝通障礙，顯著 **減輕開發端與客服團隊的負擔**。
