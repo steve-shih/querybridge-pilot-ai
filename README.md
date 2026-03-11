@@ -1,9 +1,9 @@
 # 🚀 DBPilot V3: The Enterprise AI Database Co-Pilot | AI 資料庫副駕駛
 
-[English](#english) | [繁體中文](#繁體中文)
+[English](#english) | [繁體中文](#繁體中文) demo 此專案95% 以上由 claude 與 gpt產生
 
 ---
-demo
+
 <img width="288" height="215" alt="image" src="https://github.com/user-attachments/assets/bcb26e00-2aa5-43b5-a962-e53f48798d04" />
 https://www.youtube.com/watch?v=xbvpvycP0N8
 
