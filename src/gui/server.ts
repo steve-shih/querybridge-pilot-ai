@@ -134,6 +134,17 @@ app.get('/api/stats/cost', async (_req, res) => {
     }
 });
 
+app.post('/api/config', async (req, res) => {
+    try {
+        const { apiKey, aiModel } = req.body;
+        if (!pilot) return res.status(400).json({ error: "System not initialized." });
+        pilot.updateConfig(apiKey, aiModel);
+        res.json({ success: true });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // ==================== API: Metadata CRUD ====================
 app.get('/api/metadata', async (_req, res) => {
     try {

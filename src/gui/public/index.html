@@ -233,8 +233,22 @@ console.log(response.summary);
             <div>
                 <h1>💬 Smart Playground</h1>
                 <h2 id="currentConfig">Connected: MongoDB | Claude 3.5</h2>
+                <button class="btn btn-outline" style="padding:4px 8px; font-size:10px; margin-top:5px;" onclick="toggleConfig()">⚙️ Runtime Settings</button>
             </div>
             <span class="badge" id="envLabel">Production Safe</span>
+        </div>
+
+        <div id="runtimeConfig" style="display:none; background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #3b82f6; animation: slideIn 0.3s;">
+            <h4 style="color:#60a5fa; margin-bottom:10px; font-size:14px;">🛠️ Runtime AI Configuration</h4>
+            <label>AI Intelligence</label>
+            <select id="play_model" onchange="updatePlayKeyLabel()">
+                <option value="claude" selected>Anthropic Claude 3.5 Sonnet</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="ollama">Ollama (Local)</option>
+            </select>
+            <label id="playKeyLabel">Anthropic API Key</label>
+            <input type="password" id="play_k" placeholder="sk-ant-..." autocomplete="new-password">
+            <button class="btn btn-green" style="width:100%; margin-top:10px;" onclick="doUpdateConfig()">Apply New Configuration</button>
         </div>
         
         <div style="background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #334155;">
@@ -309,6 +323,49 @@ console.log(response.summary);
 
     function toggleHistory() {
         document.getElementById('historyDrawer').classList.toggle('open');
+    }
+
+    function toggleConfig() {
+        const c = document.getElementById('runtimeConfig');
+        c.style.display = c.style.display === 'none' ? 'block' : 'none';
+        // Pre-fill with current values if possible
+        document.getElementById('play_model').value = document.getElementById('selectedAiModel').value;
+        document.getElementById('play_k').value = document.getElementById('cloud_k').value;
+        updatePlayKeyLabel();
+    }
+
+    function updatePlayKeyLabel() {
+        const m = document.getElementById('play_model').value;
+        const l = document.getElementById('playKeyLabel');
+        if (m === 'claude') l.innerText = "Anthropic API Key";
+        else if (m === 'openai') l.innerText = "OpenAI API Key";
+        else l.innerText = "Ollama (Local Default)";
+    }
+
+    async function doUpdateConfig() {
+        const m = document.getElementById('play_model').value;
+        const k = document.getElementById('play_k').value;
+        const btn = event.target;
+        btn.innerText = "Applying...";
+        try {
+            const res = await fetch('/api/config', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ apiKey: k, aiModel: m })
+            });
+            const data = await res.json();
+            if (data.success) {
+                btn.innerText = "✅ Config Updated";
+                document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('play_model').options[document.getElementById('play_model').selectedIndex].text}`;
+                // Sync back to Step 1 fields
+                document.getElementById('selectedAiModel').value = m;
+                document.getElementById('cloud_k').value = k;
+                setTimeout(() => { btn.innerText = "Apply New Configuration"; toggleConfig(); }, 1000);
+            } else throw new Error(data.error);
+        } catch(e) {
+            btn.innerText = "❌ Error: " + e.message;
+            setTimeout(() => btn.innerText = "Apply New Configuration", 2000);
+        }
     }
 
     function updateApiKeyLabel() {

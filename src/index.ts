@@ -119,4 +119,8 @@ export class DBPilotCore {
   async disconnect() {
      await this.targetDb.disconnect();
   }
+
+  updateConfig(apiKey: string, aiModel?: string) {
+    this.orchestrator.updateKey(apiKey, aiModel);
+  }
 }

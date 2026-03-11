@@ -203,4 +203,20 @@ Summary:`;
     }
     return { summary: "無法生成資料總結。", usage };
   }
+
+  updateKey(apiKey: string, aiModel?: string) {
+    if (aiModel) this.aiModel = aiModel;
+    if (this.aiModel === 'claude') {
+      this.anthropic = new Anthropic({ apiKey });
+      this.openai = undefined;
+    } else {
+      const openaiConfig: any = { apiKey };
+      if (this.aiModel === 'ollama') {
+         openaiConfig.baseURL = "http://127.0.0.1:11434/v1";
+         openaiConfig.apiKey = "ollama";
+      }
+      this.openai = new OpenAI(openaiConfig);
+      this.anthropic = undefined;
+    }
+  }
 }
