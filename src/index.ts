@@ -53,6 +53,11 @@ export class DBPilotCore {
             totalOutput += usage.outputTokens;
             totalCost += usage.costUSD;
 
+            if (generatedQuery === '查詢不到') {
+                guardError = "對不起，您的提問與資料庫商業邏輯無關，無法生成查詢。";
+                break;
+            }
+
             guardError = await QueryGuard.validate(generatedQuery);
             if (!guardError) break; 
         } catch (e: any) {

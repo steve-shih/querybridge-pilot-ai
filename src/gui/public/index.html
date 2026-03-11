@@ -574,7 +574,13 @@ console.log(response.summary);
             if (data.status === 'PENDING_APPROVAL') {
                 if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
                 const status = document.createElement('div');
-                status.innerHTML = '<div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15; margin-top:0;">Query logic ready. Technical Console updated. Waiting for signature.</div>';
+                status.innerHTML = `
+                    <div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15; margin-top:0;">
+                        Query logic ready. Waiting for signature.
+                        <div style="font-size:10px; color:#94a3b8; margin-top:5px; border-top:1px solid rgba(234,179,8,0.2); padding-top:4px;">
+                            Draft Cost: $${(data.costUSD || 0).toFixed(6)}
+                        </div>
+                    </div>`;
                 chat.appendChild(status);
                 
                 tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}\n\n[ESTIMATED COST]: $${(data.costUSD || 0).toFixed(6)}`;
@@ -583,6 +589,17 @@ console.log(response.summary);
                 document.getElementById('btnExecute').disabled = false;
             } else if (data.status === 'EXECUTED_SUCCESS') {
                 renderResult(data);
+            } else if (data.status === 'BLOCKED') {
+                if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                const blo = document.createElement('div');
+                blo.innerHTML = `
+                    <div class="status status-err" style="margin-top:0;">
+                        ${data.message || 'Query Blocked'}
+                        <div style="font-size:10px; color:#fca5a5; margin-top:5px; border-top:1px solid rgba(252,165,165,0.2); padding-top:4px;">
+                            Interaction Cost: $${(data.costUSD || 0).toFixed(6)}
+                        </div>
+                    </div>`;
+                chat.appendChild(blo);
             } else {
                 if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
                 const err = document.createElement('div');
