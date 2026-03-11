@@ -3,6 +3,13 @@
 [English](#english) | [繁體中文](#繁體中文)
 
 ---
+demo
+<img width="288" height="215" alt="image" src="https://github.com/user-attachments/assets/bcb26e00-2aa5-43b5-a962-e53f48798d04" />
+https://www.youtube.com/watch?v=xbvpvycP0N8
+
+由於本專案同時應用在 寵物店經營 與 股票資訊分析 的場景中，系統需要頻繁查詢 最新新聞資訊 以及 貓舍相關知識資料。
+
+為了提升系統的 可維護性（Maintainability） 與 模組化（Modularity），我們將原本分散在各個功能中的 外部資料存取邏輯 抽離出來，並實作成一個 獨立的資料存取模組（Data Fetching Module）。
 
 <a name="繁體中文"></a>
 ## 🇹🇼 繁體中文介紹
