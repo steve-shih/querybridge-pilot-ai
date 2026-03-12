@@ -5,7 +5,7 @@ import { LLMOrchestrator } from './core/LLMOrchestrator';
 import { QueryGuard } from './core/QueryGuard';
 import { QueryRunner } from './core/QueryRunner';
 
-export interface DBPilotOptions {
+export interface QueryBridgePilotOptions {
   systemDatabaseUri: string;
   targetDatabaseType?: string;
   targetDatabaseUri: string;
@@ -14,13 +14,13 @@ export interface DBPilotOptions {
   requireUserApproval?: boolean;
 }
 
-export class DBPilotCore {
+export class QueryBridgePilotCore {
   private targetDb: TargetDB;
   private orchestrator: LLMOrchestrator;
   private reqApproval: boolean;
   private targetDatabaseType: string;
 
-  constructor(private options: DBPilotOptions) {
+  constructor(private options: QueryBridgePilotOptions) {
     this.targetDatabaseType = options.targetDatabaseType || 'mongodb';
     this.targetDb = new TargetDB(options.targetDatabaseUri);
     this.orchestrator = new LLMOrchestrator(options.cloudApiKey, options.selectedAiModel || 'claude');
@@ -44,25 +44,25 @@ export class DBPilotCore {
     let totalInput = 0;
     let totalOutput = 0;
     let totalCost = 0;
-    
+
     for (let i = 0; i < 3; i++) {
-        try {
-            const { query, usage } = await this.orchestrator.generateQuery(question, metadatas);
-            generatedQuery = query;
-            totalInput += usage.inputTokens;
-            totalOutput += usage.outputTokens;
-            totalCost += usage.costUSD;
+      try {
+        const { query, usage } = await this.orchestrator.generateQuery(question, metadatas);
+        generatedQuery = query;
+        totalInput += usage.inputTokens;
+        totalOutput += usage.outputTokens;
+        totalCost += usage.costUSD;
 
-            if (generatedQuery === '查詢不到') {
-                guardError = "對不起，您的提問與資料庫商業邏輯無關，無法生成查詢。";
-                break;
-            }
-
-            guardError = await QueryGuard.validate(generatedQuery);
-            if (!guardError) break; 
-        } catch (e: any) {
-            errorMessage = e.message;
+        if (generatedQuery === '查詢不到') {
+          guardError = "對不起，您的提問與資料庫商業邏輯無關，無法生成查詢。";
+          break;
         }
+
+        guardError = await QueryGuard.validate(generatedQuery);
+        if (!guardError) break;
+      } catch (e: any) {
+        errorMessage = e.message;
+      }
     }
 
     const log = await AuditLog.create({
@@ -76,14 +76,14 @@ export class DBPilotCore {
     });
 
     if (guardError) {
-       await AuditLog.findByIdAndUpdate(log._id, { status: 'BLOCKED', resultSummary: { error: guardError } });
-       return { status: 'BLOCKED', message: guardError, query: generatedQuery, costUSD: totalCost };
+      await AuditLog.findByIdAndUpdate(log._id, { status: 'BLOCKED', resultSummary: { error: guardError } });
+      return { status: 'BLOCKED', message: guardError, query: generatedQuery, costUSD: totalCost };
     }
 
     if (this.reqApproval) {
-       return { status: 'PENDING_APPROVAL', queryId: log._id, query: generatedQuery, costUSD: totalCost, totalTokens: totalInput + totalOutput };
+      return { status: 'PENDING_APPROVAL', queryId: log._id, query: generatedQuery, costUSD: totalCost, totalTokens: totalInput + totalOutput };
     } else {
-       return await this.executeApprovedQuery(log._id.toString());
+      return await this.executeApprovedQuery(log._id.toString());
     }
   }
 
@@ -92,40 +92,40 @@ export class DBPilotCore {
     if (!log) throw new Error("Query not found.");
 
     try {
-        const match = log.generatedQuery.match(/db\.collection\(['"](.*?)['"]\)/);
-        const collectionName = match ? match[1] : '';
-        const enforcedQuery = collectionName ? await QueryGuard.enforceLimit(collectionName, log.generatedQuery) : log.generatedQuery;
+      const match = log.generatedQuery.match(/db\.collection\(['"](.*?)['"]\)/);
+      const collectionName = match ? match[1] : '';
+      const enforcedQuery = collectionName ? await QueryGuard.enforceLimit(collectionName, log.generatedQuery) : log.generatedQuery;
 
-        const data = await QueryRunner.execute(this.targetDb.getDb(), enforcedQuery);
-        
-        // Truncate data for summarization (max 20 records) to prevent LLM timeouts
-        const truncatedData = Array.isArray(data) ? data.slice(0, 20) : data;
-        
-        // New: Summarize results using LLM
-        const { summary, usage } = await this.orchestrator.summarizeData(log.userQuestion, truncatedData);
+      const data = await QueryRunner.execute(this.targetDb.getDb(), enforcedQuery);
 
-        const finalInput = (log.inputTokens || 0) + usage.inputTokens;
-        const finalOutput = (log.outputTokens || 0) + usage.outputTokens;
-        const finalCost = (log.costUSD || 0) + usage.costUSD;
+      // Truncate data for summarization (max 20 records) to prevent LLM timeouts
+      const truncatedData = Array.isArray(data) ? data.slice(0, 20) : data;
 
-        await AuditLog.findByIdAndUpdate(queryId, { 
-           status: 'EXECUTED_SUCCESS', 
-           resultSummary: { count: Array.isArray(data) ? data.length : 1, summary } ,
-           inputTokens: finalInput,
-           outputTokens: finalOutput,
-           totalTokens: finalInput + finalOutput,
-           costUSD: finalCost
-        });
+      // New: Summarize results using LLM
+      const { summary, usage } = await this.orchestrator.summarizeData(log.userQuestion, truncatedData);
 
-        return { status: 'EXECUTED_SUCCESS', data, summary, costUSD: finalCost, totalTokens: finalInput + finalOutput };
+      const finalInput = (log.inputTokens || 0) + usage.inputTokens;
+      const finalOutput = (log.outputTokens || 0) + usage.outputTokens;
+      const finalCost = (log.costUSD || 0) + usage.costUSD;
+
+      await AuditLog.findByIdAndUpdate(queryId, {
+        status: 'EXECUTED_SUCCESS',
+        resultSummary: { count: Array.isArray(data) ? data.length : 1, summary },
+        inputTokens: finalInput,
+        outputTokens: finalOutput,
+        totalTokens: finalInput + finalOutput,
+        costUSD: finalCost
+      });
+
+      return { status: 'EXECUTED_SUCCESS', data, summary, costUSD: finalCost, totalTokens: finalInput + finalOutput };
     } catch (e: any) {
-        await AuditLog.findByIdAndUpdate(queryId, { status: 'ERROR', resultSummary: { error: e.message } });
-        return { status: 'ERROR', error: e.message };
+      await AuditLog.findByIdAndUpdate(queryId, { status: 'ERROR', resultSummary: { error: e.message } });
+      return { status: 'ERROR', error: e.message };
     }
   }
 
   async disconnect() {
-     await this.targetDb.disconnect();
+    await this.targetDb.disconnect();
   }
 
   updateConfig(apiKey: string, aiModel?: string) {

@@ -27,6 +27,8 @@ export interface ICollectionMetadata extends Document {
   forbiddenSyntax: string[];
   limitSize: number;
   isBlacklisted: boolean;
+  indexes: any[];
+  totalDocs: number;
 }
 
 const CollectionMetadataSchema = new Schema<ICollectionMetadata>({
@@ -37,7 +39,9 @@ const CollectionMetadataSchema = new Schema<ICollectionMetadata>({
   relatedCollections: { type: [String], default: [] },
   forbiddenSyntax: { type: [String], default: ['delete', 'update', 'insert', 'drop', 'aggregate'] },
   limitSize: { type: Number, default: 50 },
-  isBlacklisted: { type: Boolean, default: false }
+  isBlacklisted: { type: Boolean, default: false },
+  indexes: { type: Schema.Types.Mixed, default: [] },
+  totalDocs: { type: Number, default: 0 }
 });
 
 export const CollectionMetadata = mongoose.models.CollectionMetadata || mongoose.model<ICollectionMetadata>('CollectionMetadata', CollectionMetadataSchema);
@@ -73,6 +77,6 @@ export const AuditLog = mongoose.models.AuditLog || mongoose.model<IAuditLog>('A
 export const connectInternalDB = async (uri: string) => {
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(uri);
-    console.log(`[DBPilot] Internal DB connected at ${uri}`);
+    console.log(`[querybridge-pilot-ai] Internal DB connected at ${uri}`);
   }
 };

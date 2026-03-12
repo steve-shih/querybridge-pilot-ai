@@ -1,470 +1,953 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DBPilot V3 | Smart Schema Pilot</title>
+    <title>querybridge-pilot-ai V3 | Smart Schema Pilot</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; overflow-x: hidden; }
-        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
         /* Layout */
-        .page { display: none; min-height: 100vh; padding: 60px 20px; position: relative; }
-        .page.active { display: block; }
-        .card { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative; }
-        
+        .page {
+            display: none;
+            min-height: 100vh;
+            padding: 60px 20px;
+            position: relative;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .card {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
         /* Dashboard Overlay */
-        #costDisplay { position: fixed; top: 15px; left: 15px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); padding: 8px 15px; border-radius: 20px; border: 1px solid #334155; font-size: 12px; z-index: 100; color: #6ee7b7; font-weight: bold; }
-        
+        #costDisplay {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            font-size: 12px;
+            z-index: 100;
+            color: #6ee7b7;
+            font-weight: bold;
+        }
+
         /* Stepper & Navigation */
-        h1 { color: #60a5fa; margin-bottom: 6px; font-size: 28px; }
-        h2 { color: #94a3b8; font-size: 14px; margin-bottom: 25px; font-weight: normal; }
-        .stepper { display: flex; justify-content: center; gap: 8px; margin-bottom: 30px; }
-        .step-dot { width: 10px; height: 10px; border-radius: 50%; background: #334155; }
-        .step-dot.active { background: #3b82f6; width: 30px; border-radius: 5px; }
+        h1 {
+            color: #60a5fa;
+            margin-bottom: 6px;
+            font-size: 28px;
+        }
+
+        h2 {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 25px;
+            font-weight: normal;
+        }
+
+        .stepper {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #334155;
+        }
+
+        .step-dot.active {
+            background: #3b82f6;
+            width: 30px;
+            border-radius: 5px;
+        }
 
         /* Tabs */
-        .tab-bar { display: flex; gap: 20px; border-bottom: 1px solid #334155; margin-bottom: 25px; }
-        .tab { padding: 10px 0; color: #94a3b8; cursor: pointer; border-bottom: 3px solid transparent; font-size: 14px; font-weight: 600; }
-        .tab.active { color: #60a5fa; border-color: #60a5fa; }
-        .tab-content { display: none; padding: 10px 0; }
-        .tab-content.active { display: block; }
+        .tab-bar {
+            display: flex;
+            gap: 20px;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 25px;
+        }
+
+        .tab {
+            padding: 10px 0;
+            color: #94a3b8;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            color: #60a5fa;
+            border-color: #60a5fa;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
 
         /* Form Controls */
-        label { display: block; margin: 12px 0 4px; font-weight: 600; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
-        input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #334155; border-radius: 6px; background: #0f172a; color: #e2e8f0; font-size: 14px; outline: none; transition: 0.2s; }
-        input:focus, select:focus, textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-        .row { display: flex; gap: 12px; } .row > div { flex: 1; }
+        label {
+            display: block;
+            margin: 12px 0 4px;
+            font-weight: 600;
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row>div {
+            flex: 1;
+        }
 
         /* Buttons */
-        .btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 14px; transition: 0.2s; text-align: center; }
-        .btn-primary { background: #3b82f6; color: white; }
-        .btn-green { background: #10b981; color: white; }
-        .btn-red { background: #ef4444; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #475569; color: #94a3b8; }
-        .btn-bar { display: flex; justify-content: space-between; margin-top: 25px; }
-        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-green {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-red {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #475569;
+            color: #94a3b8;
+        }
+
+        .btn-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+        }
+
         /* Status & Feedback */
-        .status { margin-top: 15px; padding: 15px; border-radius: 8px; font-size: 13px; animation: fadeIn 0.3s ease; }
-        .status-info { background: #1e3a8a; color: #93c5fd; }
-        .status-ok { background: #064e3b; color: #6ee7b7; }
-        .status-err { background: #450a0a; color: #fca5a5; }
+        .status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .status-info {
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
+
+        .status-ok {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
+        .status-err {
+            background: #450a0a;
+            color: #fca5a5;
+        }
 
         /* Schema Manager */
-        .col-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .col-card h4 { color: #60a5fa; font-size: 18px; margin-bottom: 12px; border-bottom: 1px solid #1e293b; padding-bottom: 8px; }
+        .col-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .col-card h4 {
+            color: #60a5fa;
+            font-size: 18px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 8px;
+        }
 
         /* Drawer - History */
-        #historyDrawer { position: fixed; top: 0; right: -350px; width: 350px; height: 100vh; background: #1e293b; border-left: 1px solid #334155; box-shadow: -10px 0 30px rgba(0,0,0,0.5); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1002; display: flex; flex-direction: column; }
-        #historyDrawer.open { right: 0; }
-        #historyHeader { padding: 20px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        #historyContent { flex: 1; overflow-y: auto; padding: 15px; }
-        .history-item { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 10px; font-size: 12px; position: relative; }
-        .history-item .time { font-size: 10px; color: #64748b; margin-bottom: 4px; }
-        .history-item .q { font-weight: bold; color: #e2e8f0; margin-bottom: 4px; }
-        .history-item .cost { color: #6ee7b7; font-size: 10px; }
-        .history-del { position: absolute; top: 10px; right: 10px; cursor: pointer; color: #64748b; }
+        #historyDrawer {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100vh;
+            background: #1e293b;
+            border-left: 1px solid #334155;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1002;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #historyDrawer.open {
+            right: 0;
+        }
+
+        #historyHeader {
+            padding: 20px;
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #historyContent {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .history-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            position: relative;
+        }
+
+        .history-item .time {
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .history-item .q {
+            font-weight: bold;
+            color: #e2e8f0;
+            margin-bottom: 4px;
+        }
+
+        .history-item .cost {
+            color: #6ee7b7;
+            font-size: 10px;
+        }
+
+        .history-del {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            color: #64748b;
+        }
 
         /* Technical Panel */
-        #techPanel { position: fixed; right: 20px; bottom: 85px; width: 450px; max-height: 55vh; background: #1e293b; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: none; flex-direction: column; overflow: hidden; z-index: 1000; }
-        #techHeader { padding: 12px 16px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        #techContent { padding: 16px; overflow-y: auto; font-family: "Fira Code", monospace; font-size: 12px; color: #a5b4fc; background: #020617; flex: 1; }
-        
+        #techPanel {
+            position: fixed;
+            right: 20px;
+            bottom: 85px;
+            width: 450px;
+            max-height: 55vh;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        #techHeader {
+            padding: 12px 16px;
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #techContent {
+            padding: 16px;
+            overflow-y: auto;
+            font-family: "Fira Code", monospace;
+            font-size: 12px;
+            color: #a5b4fc;
+            background: #020617;
+            flex: 1;
+        }
+
         /* Floating Action Buttons */
-        .fab { position: fixed; right: 20px; width: 50px; height: 50px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.5); z-index: 1001; transition: 0.2s; border: none; }
-        .fab:hover { transform: scale(1.1); transform-origin: center; }
-        #techFab { bottom: 20px; }
-        #historyFab { bottom: 80px; background: #475569; }
+        .fab {
+            position: fixed;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+            z-index: 1001;
+            transition: 0.2s;
+            border: none;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            transform-origin: center;
+        }
+
+        #techFab {
+            bottom: 20px;
+        }
+
+        #historyFab {
+            bottom: 80px;
+            background: #475569;
+        }
 
         /* Loading Animation & Feature Carousel */
-        .loading-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
-        .spinner { width: 50px; height: 50px; border: 4px solid #1e293b; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 30px; }
-        .feature-teaser { max-width: 400px; height: 100px; color: #94a3b8; font-size: 16px; font-weight: 500; }
-        
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.95);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #1e293b;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+
+        .feature-teaser {
+            max-width: 400px;
+            height: 100px;
+            color: #94a3b8;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
         /* Summary Card */
-        .summary-card { background: #1e3a8a; border-left: 5px solid #3b82f6; padding: 25px; border-radius: 8px; color: #f1f5f9; line-height: 1.6; margin-bottom: 20px; animation: slideIn 0.4s ease-out; }
-        .summary-card h4 { color: #93c5fd; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; }
+        .summary-card {
+            background: #1e3a8a;
+            border-left: 5px solid #3b82f6;
+            padding: 25px;
+            border-radius: 8px;
+            color: #f1f5f9;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .summary-card h4 {
+            color: #93c5fd;
+            margin-bottom: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
 
         /* Animations */
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        .pulse { animation: pulse 2s infinite; }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
 
         /* Utils */
-        .code-block { background: #020617; padding: 15px; border-radius: 6px; font-family: monospace; color: #cbd5e1; margin: 10px 0; border: 1px solid #334155; }
-        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #1e3a8a; color: #93c5fd; }
+        .code-block {
+            background: #020617;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #cbd5e1;
+            margin: 10px 0;
+            border: 1px solid #334155;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #1e3a8a;
+            color: #93c5fd;
+        }
 
         /* Chat Specific */
-        #chatContainer { max-height: 500px; overflow-y: auto; padding: 10px; border: 1px solid #334155; border-radius: 12px; background: #020617; margin-top: 20px; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
-        .msg-user { align-self: flex-end; background: #3b82f6; color: white; padding: 12px 18px; border-radius: 18px 18px 2px 18px; max-width: 80%; font-size: 14px; position: relative; }
-        .msg-user::before { content: 'YOU'; position: absolute; bottom: -18px; right: 5px; font-size: 9px; color: #64748b; font-weight: bold; }
-        .msg-ai { align-self: flex-start; width: 100%; border-radius: 12px; position: relative; }
-        #askResult { display: flex; flex-direction: column; gap: 15px; }
+        #chatContainer {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            background: #020617;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .msg-user {
+            align-self: flex-end;
+            background: #3b82f6;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 18px 18px 2px 18px;
+            max-width: 80%;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .msg-user::before {
+            content: 'YOU';
+            position: absolute;
+            bottom: -18px;
+            right: 5px;
+            font-size: 9px;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .msg-ai {
+            align-self: flex-start;
+            width: 100%;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        #askResult {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
     </style>
 </head>
+
 <body>
 
-<!-- Loading Overlay -->
-<div id="loadingOverlay" class="loading-overlay">
-    <div class="spinner"></div>
-    <div id="teaserBox" class="feature-teaser">DBPilot is parsing your data structure...</div>
-    <p style="margin-top:20px; font-size:12px; color:#3b82f6;">First-time scanning usually takes 30-60 seconds.</p>
-</div>
-
-<!-- History Drawer -->
-<div id="historyDrawer">
-    <div id="historyHeader">
-        <span style="font-weight:700;">HISTORY LOG</span>
-        <div style="display:flex; gap:10px;">
-            <button class="btn" style="padding:4px 8px; font-size:10px; background: transparent; border: 1px solid #450a0a; color: #ef4444;" onclick="clearHistory()">Clear All</button>
-            <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;" onclick="toggleHistory()">✕</button>
-        </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <div id="teaserBox" class="feature-teaser">querybridge-pilot-ai is parsing your data structure...</div>
+        <p style="margin-top:20px; font-size:12px; color:#3b82f6;">First-time scanning usually takes 30-60 seconds.</p>
     </div>
-    <div id="historyContent"></div>
-</div>
 
-<!-- Floating Buttons -->
-<button id="historyFab" class="fab" title="Conversation History" onclick="toggleHistory()" style="display:none;">📖</button>
-<button id="techFab" class="fab" title="Technical Console" onclick="toggleTechPanel()" style="display:none;">📜</button>
-
-<!-- Technical Panel -->
-<div id="techPanel">
-    <div id="techHeader">
-        <span style="font-weight:700; font-size:13px;">TECHNICAL CONSOLE</span>
-        <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;" onclick="toggleTechPanel()">✕</button>
-    </div>
-    <div id="techContent">Waiting for input...</div>
-</div>
-
-<!-- ==================== PAGE 1: ONBOARDING & CONNECTION ==================== -->
-<div class="page active" id="page1">
-    <div class="card">
-        <div class="stepper"><span class="step-dot active"></span><span class="step-dot"></span><span class="step-dot"></span></div>
-        <h1>🚀 DBPilot V3</h1>
-        <h2>Your AI-powered database co-pilot</h2>
-
-        <div class="tab-bar">
-            <div class="tab active" onclick="showTab('gui-tab', event)">Main Settings</div>
-            <div class="tab" onclick="showTab('sdk-tab', event)">SDK Reference</div>
+    <!-- History Drawer -->
+    <div id="historyDrawer">
+        <div id="historyHeader">
+            <span style="font-weight:700;">HISTORY LOG</span>
+            <div style="display:flex; gap:10px;">
+                <button class="btn"
+                    style="padding:4px 8px; font-size:10px; background: transparent; border: 1px solid #450a0a; color: #ef4444;"
+                    onclick="clearHistory()">Clear All</button>
+                <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;"
+                    onclick="toggleHistory()">✕</button>
+            </div>
         </div>
+        <div id="historyContent"></div>
+    </div>
 
-        <div id="gui-tab" class="tab-content active">
-            <!-- Dummy fields to trap browser autofill -->
-            <div style="position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;">
-                <input type="text" name="p_u" tabIndex="-1"><input type="password" name="p_p" tabIndex="-1">
+    <!-- Floating Buttons -->
+    <button id="historyFab" class="fab" title="Conversation History" onclick="toggleHistory()"
+        style="display:none;">📖</button>
+    <button id="techFab" class="fab" title="Technical Console" onclick="toggleTechPanel()"
+        style="display:none;">📜</button>
+
+    <!-- Technical Panel -->
+    <div id="techPanel">
+        <div id="techHeader">
+            <span style="font-weight:700; font-size:13px;">TECHNICAL CONSOLE</span>
+            <button class="btn" style="padding:4px 8px; background:transparent; color:#94a3b8;"
+                onclick="toggleTechPanel()">✕</button>
+        </div>
+        <div id="techContent">Waiting for input...</div>
+    </div>
+
+    <!-- ==================== PAGE 1: ONBOARDING & CONNECTION ==================== -->
+    <div class="page active" id="page1">
+        <div class="card">
+            <div class="stepper"><span class="step-dot active"></span><span class="step-dot"></span><span
+                    class="step-dot"></span></div>
+            <h1>🚀 querybridge-pilot-ai V3</h1>
+            <h2>Your AI-powered database co-pilot</h2>
+
+            <div class="tab-bar">
+                <div class="tab active" onclick="showTab('gui-tab', event)">Main Settings</div>
+                <div class="tab" onclick="showTab('sdk-tab', event)">SDK Reference</div>
             </div>
 
-            <label>Target Database</label>
-            <div class="row">
-                <div style="flex:0.4"><select id="targetDatabaseType"><option value="mongodb">MongoDB</option></select></div>
-                <div><input type="text" id="target_h" placeholder="Host (e.g. 127.0.0.1)" autocomplete="new-password"></div>
-                <div style="flex:0.3"><input type="text" id="target_p" placeholder="Port" value="27017" autocomplete="new-password"></div>
-            </div>
-            <div class="row">
-                <div><label>User</label><input type="text" id="target_u" autocomplete="new-password"></div>
-                <div><label>Pass</label><input type="password" id="target_w" autocomplete="new-password"></div>
-                <div><label>DB NAME</label><input type="text" id="target_d" placeholder="target_db" autocomplete="new-password"></div>
-            </div>
-
-            <hr style="border-color:#334155; margin: 25px 0;">
-
-            <label>AI Intelligence (Claude 3.5 Sonnet Recommended)</label>
-            <select id="selectedAiModel" onchange="updateApiKeyLabel()">
-                <option value="claude" selected>Anthropic Claude 3.5 Sonnet (Best English/Chinese)</option>
-                <option value="openai">OpenAI GPT-4o (Fast)</option>
-                <option value="ollama">Ollama (Local Deployment)</option>
-            </select>
-            <label id="apiKeyLabel">Anthropic API Key</label>
-            <input type="password" id="cloud_k" placeholder="sk-ant-..." autocomplete="new-password">
-
-            <div style="margin-top:20px; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid #1e3a8a;">
-                <div style="display:flex; align-items:center;">
-                    <label class="toggle" style="margin-bottom:0;"><input type="checkbox" id="require_human" checked><span class="slider"></span></label>
-                    <span style="margin-left:12px; font-weight:600; color:#94a3b8; font-size:13px;">Human-in-the-Loop Mode</span>
+            <div id="gui-tab" class="tab-content active">
+                <!-- Dummy fields to trap browser autofill -->
+                <div style="position: absolute; opacity: 0; pointer-events: none; height: 0; overflow: hidden;">
+                    <input type="text" name="p_u" tabIndex="-1"><input type="password" name="p_p" tabIndex="-1">
                 </div>
-                <p style="margin-top:8px; font-size:11px; color:#64748b;">Highly recommended: AI will wait for your approval before writing or executing queries.</p>
+
+                <label>Target Database</label>
+                <div class="row">
+                    <div style="flex:0.4"><select id="targetDatabaseType">
+                            <option value="mongodb">MongoDB</option>
+                        </select></div>
+                    <div><input type="text" id="target_h" placeholder="Host (e.g. 127.0.0.1)"
+                            autocomplete="new-password"></div>
+                    <div style="flex:0.3"><input type="text" id="target_p" placeholder="Port" value="27017"
+                            autocomplete="new-password"></div>
+                </div>
+                <div class="row">
+                    <div><label>User</label><input type="text" id="target_u" autocomplete="new-password"></div>
+                    <div><label>Pass</label><input type="password" id="target_w" autocomplete="new-password"></div>
+                    <div><label>DB NAME</label><input type="text" id="target_d" placeholder="target_db"
+                            autocomplete="new-password"></div>
+                </div>
+
+                <hr style="border-color:#334155; margin: 25px 0;">
+
+                <label>AI Intelligence (Claude 3.5 Sonnet Recommended)</label>
+                <select id="selectedAiModel" onchange="updateApiKeyLabel()">
+                    <option value="claude" selected>Anthropic Claude 3.5 Sonnet (Best English/Chinese)</option>
+                    <option value="openai">OpenAI GPT-4o (Fast)</option>
+                    <option value="ollama">Ollama (Local Deployment)</option>
+                </select>
+                <label id="apiKeyLabel">Anthropic API Key</label>
+                <input type="password" id="cloud_k" placeholder="sk-ant-..." autocomplete="new-password">
+
+                <div
+                    style="margin-top:20px; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid #1e3a8a;">
+                    <div style="display:flex; align-items:center;">
+                        <label class="toggle" style="margin-bottom:0;"><input type="checkbox" id="require_human"
+                                checked><span class="slider"></span></label>
+                        <span
+                            style="margin-left:12px; font-weight:600; color:#94a3b8; font-size:13px;">Human-in-the-Loop
+                            Mode</span>
+                    </div>
+                    <p style="margin-top:8px; font-size:11px; color:#64748b;">Highly recommended: AI will wait for your
+                        approval before writing or executing queries.</p>
+                </div>
             </div>
-        </div>
 
-        <div id="sdk-tab" class="tab-content">
-            <p style="font-size:14px; color:#94a3b8; margin-bottom:15px;">Want to integrate DBPilot into your app? Use our native SDK:</p>
-            <div class="code-block">
-const { DBPilotCore } = require('dbpilot');
+            <div id="sdk-tab" class="tab-content">
+                <p style="font-size:14px; color:#94a3b8; margin-bottom:15px;">Want to integrate querybridge-pilot-ai
+                    into your app? Use our native SDK:</p>
+                <div class="code-block">
+                    const { QueryBridgePilotCore } = require('querybridge-pilot-ai');
 
-const pilot = new DBPilotCore({
-  targetDatabaseUri: 'mongodb://...',
-  cloudApiKey: '...',
-  selectedAiModel: 'claude'
-});
+                    const pilot = new QueryBridgePilotCore({
+                    targetDatabaseUri: 'mongodb://...',
+                    cloudApiKey: '...',
+                    selectedAiModel: 'claude'
+                    });
 
-await pilot.initialize();
-const response = await pilot.ask("Find users over 30");
-console.log(response.summary);
+                    await pilot.initialize();
+                    const response = await pilot.ask("Find users over 30");
+                    console.log(response.summary);
+                </div>
+                <p style="font-size:12px; color:#64748b; margin-top:10px;">Check README.md for complete enterprise
+                    licensing and SDK capabilities.</p>
             </div>
-            <p style="font-size:12px; color:#64748b; margin-top:10px;">Check README.md for complete enterprise licensing and SDK capabilities.</p>
-        </div>
 
-        <div class="btn-bar">
-            <span></span>
-            <button class="btn btn-primary" id="btnInit" onclick="doInit()">Start AI Exploration →</button>
-        </div>
-        <div id="initStatus" class="status" style="display:none;"></div>
-    </div>
-</div>
-
-<!-- ==================== PAGE 2: SCHEMA ==================== -->
-<div class="page" id="page2">
-    <div class="card" style="max-width:1000px;">
-        <div class="stepper"><span class="step-dot"></span><span class="step-dot active"></span><span class="step-dot"></span></div>
-        <h1>📂 Collection Metadata</h1>
-        <h2>Review how AI understood your schema. You can manually refine instructions here.</h2>
-
-        <div id="schemaList"></div>
-
-        <div class="btn-bar">
-            <button class="btn btn-outline" onclick="goPage(1)">← Back</button>
-            <button class="btn btn-primary" onclick="goPage(3)">Enter Playground →</button>
-        </div>
-    </div>
-</div>
-
-<!-- ==================== PAGE 3: PLAYGROUND ==================== -->
-<div class="page" id="page3">
-    <div class="card" style="max-width:900px;">
-        <div class="stepper"><span class="step-dot"></span><span class="step-dot"></span><span class="step-dot active"></span></div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-                <h1>💬 Smart Playground</h1>
-                <h2 id="currentConfig">Connected: MongoDB | Claude 3.5</h2>
-                <button class="btn btn-outline" style="padding:4px 8px; font-size:10px; margin-top:5px;" onclick="toggleConfig()">⚙️ Runtime Settings</button>
+            <div class="btn-bar">
+                <span></span>
+                <button class="btn btn-primary" id="btnInit" onclick="doInit()">Start AI Exploration →</button>
             </div>
-            <span class="badge" id="envLabel">Production Safe</span>
-        </div>
-
-        <div id="runtimeConfig" style="display:none; background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #3b82f6; animation: slideIn 0.3s;">
-            <h4 style="color:#60a5fa; margin-bottom:10px; font-size:14px;">🛠️ Runtime AI Configuration</h4>
-            <label>AI Intelligence</label>
-            <select id="play_model" onchange="updatePlayKeyLabel()">
-                <option value="claude" selected>Anthropic Claude 3.5 Sonnet</option>
-                <option value="openai">OpenAI GPT-4o</option>
-                <option value="ollama">Ollama (Local)</option>
-            </select>
-            <label id="playKeyLabel">Anthropic API Key</label>
-            <input type="password" id="play_k" placeholder="sk-ant-..." autocomplete="new-password">
-            <button class="btn btn-green" style="width:100%; margin-top:10px;" onclick="doUpdateConfig()">Apply New Configuration</button>
-        </div>
-        
-        <div style="background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #334155;">
-            <label>Data Query Question</label>
-            <textarea id="question" rows="3" placeholder="例如：找出最近十位註冊的用戶，並列出他們的信箱..."></textarea>
-            <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="btnAsk" onclick="doAsk()">Fire Query</button>
-        </div>
-
-        <div id="chatContainer">
-            <div id="askResult">
-                <p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">Dialogue history will appear here. Start by asking a question above.</p>
-            </div>
-        </div>
-
-        <div id="approvalBox" style="display:none; border:2px solid #eab308; padding:20px; border-radius:12px; background: rgba(234, 179, 8, 0.05); margin-top:20px; animation: slideIn 0.3s;">
-            <h4 style="color:#eab308; margin-bottom:10px; font-size:14px;">🛠️ Awaiting Your Approval</h4>
-            <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">AI has proposed a query. Inspect it in the 📜 Console before confirming.</p>
-            <div style="display:flex; gap:12px;">
-                <button class="btn btn-green" style="flex:2" id="btnExecute" onclick="doExecute()">Execute Proposed Query</button>
-                <button class="btn btn-red" style="flex:1" onclick="doReject()">Discard</button>
-            </div>
-            <input type="hidden" id="pendingQueryId">
-        </div>
-
-        <div class="btn-bar">
-            <button class="btn btn-outline" onclick="goPage(2)">← Edit Schema</button>
-            <span></span>
+            <div id="initStatus" class="status" style="display:none;"></div>
         </div>
     </div>
-</div>
 
-<script>
-    // ========= Features Carousel =========
-    const teasers = [
-        "DBPilot is parsing your data structure...",
-        "Using 10-doc sampling to detect field types...",
-        "Identifying deep nested relationships...",
-        "Analyzing business context with Claude 3.5...",
-        "Building AuditLogs for governance...",
-        "Enforcing 'delete' and 'drop' protection..."
-    ];
-    let teaserIdx = 0;
-    setInterval(() => {
-        const box = document.getElementById('teaserBox');
-        if (box) box.innerText = teasers[++teaserIdx % teasers.length];
-    }, 4500);
+    <!-- ==================== PAGE 2: SCHEMA ==================== -->
+    <div class="page" id="page2">
+        <div class="card" style="max-width:1000px;">
+            <div class="stepper"><span class="step-dot"></span><span class="step-dot active"></span><span
+                    class="step-dot"></span></div>
+            <h1>📂 Collection Metadata</h1>
+            <h2>Review how AI understood your schema. You can manually refine instructions here.</h2>
 
-    // ========= Core Navigation =========
-    function goPage(n) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page' + n).classList.add('active');
-        window.scrollTo(0, 0);
-        
-        const fabDisplay = n === 3 ? 'flex' : 'none';
-        document.getElementById('techFab').style.display = fabDisplay;
-        document.getElementById('historyFab').style.display = fabDisplay;
-        
-        if (n === 3) {
-            loadHistory();
+            <div id="schemaList"></div>
+
+            <div class="btn-bar">
+                <button class="btn btn-outline" onclick="goPage(1)">← Back</button>
+                <button class="btn btn-primary" onclick="goPage(3)">Enter Playground →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PAGE 3: PLAYGROUND ==================== -->
+    <div class="page" id="page3">
+        <div class="card" style="max-width:900px;">
+            <div class="stepper"><span class="step-dot"></span><span class="step-dot"></span><span
+                    class="step-dot active"></span></div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h1>💬 Smart Playground</h1>
+                    <h2 id="currentConfig">Connected: MongoDB | Claude 3.5</h2>
+                    <button class="btn btn-outline" style="padding:4px 8px; font-size:10px; margin-top:5px;"
+                        onclick="toggleConfig()">⚙️ Runtime Settings</button>
+                </div>
+                <span class="badge" id="envLabel">Production Safe</span>
+            </div>
+
+            <div id="runtimeConfig"
+                style="display:none; background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #3b82f6; animation: slideIn 0.3s;">
+                <h4 style="color:#60a5fa; margin-bottom:10px; font-size:14px;">🛠️ Runtime AI Configuration</h4>
+                <label>AI Intelligence</label>
+                <select id="play_model" onchange="updatePlayKeyLabel()">
+                    <option value="claude" selected>Anthropic Claude 3.5 Sonnet</option>
+                    <option value="openai">OpenAI GPT-4o</option>
+                    <option value="ollama">Ollama (Local)</option>
+                </select>
+                <label id="playKeyLabel">Anthropic API Key</label>
+                <input type="password" id="play_k" placeholder="sk-ant-..." autocomplete="new-password">
+                <button class="btn btn-green" style="width:100%; margin-top:10px;" onclick="doUpdateConfig()">Apply New
+                    Configuration</button>
+            </div>
+
+            <div
+                style="background:#0f172a; border-radius:12px; padding:20px; margin-top:10px; border:1px solid #334155;">
+                <label>Data Query Question</label>
+                <textarea id="question" rows="3" placeholder="例如：找出最近十位註冊的用戶，並列出他們的信箱..."></textarea>
+                <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="btnAsk" onclick="doAsk()">Fire
+                    Query</button>
+            </div>
+
+            <div id="chatContainer">
+                <div id="askResult">
+                    <p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">Dialogue history will
+                        appear here. Start by asking a question above.</p>
+                </div>
+            </div>
+
+            <div id="approvalBox"
+                style="display:none; border:2px solid #eab308; padding:20px; border-radius:12px; background: rgba(234, 179, 8, 0.05); margin-top:20px; animation: slideIn 0.3s;">
+                <h4 style="color:#eab308; margin-bottom:10px; font-size:14px;">🛠️ Awaiting Your Approval</h4>
+                <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">AI has proposed a query. Inspect it in the
+                    📜 Console before confirming.</p>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn btn-green" style="flex:2" id="btnExecute" onclick="doExecute()">Execute Proposed
+                        Query</button>
+                    <button class="btn btn-red" style="flex:1" onclick="doReject()">Discard</button>
+                </div>
+                <input type="hidden" id="pendingQueryId">
+            </div>
+
+            <div class="btn-bar">
+                <button class="btn btn-outline" onclick="goPage(2)">← Edit Schema</button>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========= Features Carousel =========
+        const teasers = [
+            "querybridge-pilot-ai is parsing your data structure...",
+            "Using 10-doc sampling to detect field types...",
+            "Identifying deep nested relationships...",
+            "Analyzing business context with Claude 3.5...",
+            "Building AuditLogs for governance...",
+            "Enforcing 'delete' and 'drop' protection..."
+        ];
+        let teaserIdx = 0;
+        setInterval(() => {
+            const box = document.getElementById('teaserBox');
+            if (box) box.innerText = teasers[++teaserIdx % teasers.length];
+        }, 4500);
+
+        // ========= Core Navigation =========
+        function goPage(n) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page' + n).classList.add('active');
+            window.scrollTo(0, 0);
+
+            const fabDisplay = n === 3 ? 'flex' : 'none';
+            document.getElementById('techFab').style.display = fabDisplay;
+            document.getElementById('historyFab').style.display = fabDisplay;
+
+            if (n === 3) {
+                loadHistory();
+            }
         }
-    }
 
-    function showTab(id, e) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.target.classList.add('active');
-    }
-
-    // ========= UI Controls =========
-    function toggleTechPanel() {
-        const p = document.getElementById('techPanel');
-        p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
-    }
-
-    function toggleHistory() {
-        document.getElementById('historyDrawer').classList.toggle('open');
-    }
-
-    function toggleConfig() {
-        const c = document.getElementById('runtimeConfig');
-        c.style.display = c.style.display === 'none' ? 'block' : 'none';
-        // Pre-fill with current values if possible
-        document.getElementById('play_model').value = document.getElementById('selectedAiModel').value;
-        document.getElementById('play_k').value = document.getElementById('cloud_k').value;
-        updatePlayKeyLabel();
-    }
-
-    function updatePlayKeyLabel() {
-        const m = document.getElementById('play_model').value;
-        const l = document.getElementById('playKeyLabel');
-        if (m === 'claude') l.innerText = "Anthropic API Key";
-        else if (m === 'openai') l.innerText = "OpenAI API Key";
-        else l.innerText = "Ollama (Local Default)";
-    }
-
-    async function doUpdateConfig() {
-        const m = document.getElementById('play_model').value;
-        const k = document.getElementById('play_k').value;
-        const btn = event.target;
-        btn.innerText = "Applying...";
-        try {
-            const res = await fetch('/api/config', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ apiKey: k, aiModel: m })
-            });
-            const data = await res.json();
-            if (data.success) {
-                btn.innerText = "✅ Config Updated";
-                document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('play_model').options[document.getElementById('play_model').selectedIndex].text}`;
-                // Sync back to Step 1 fields
-                document.getElementById('selectedAiModel').value = m;
-                document.getElementById('cloud_k').value = k;
-                setTimeout(() => { btn.innerText = "Apply New Configuration"; toggleConfig(); }, 1000);
-            } else throw new Error(data.error);
-        } catch(e) {
-            btn.innerText = "❌ Error: " + e.message;
-            setTimeout(() => btn.innerText = "Apply New Configuration", 2000);
+        function showTab(id, e) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            e.target.classList.add('active');
         }
-    }
 
-    function updateApiKeyLabel() {
-        const m = document.getElementById('selectedAiModel').value;
-        const l = document.getElementById('apiKeyLabel');
-        const k = document.getElementById('cloud_k');
-        if (m === 'claude') { l.innerText = "Anthropic API Key"; k.placeholder = "sk-ant-..."; }
-        else if (m === 'openai') { l.innerText = "OpenAI API Key"; k.placeholder = "sk-proj-..."; }
-        else { l.innerText = "Ollama (Local Default)"; k.placeholder = "Not required for local"; k.value = "ollama"; }
-    }
+        // ========= UI Controls =========
+        function toggleTechPanel() {
+            const p = document.getElementById('techPanel');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        }
 
-    function getUri() {
-        const host = document.getElementById('target_h').value || '127.0.0.1';
-        const port = document.getElementById('target_p').value || '27017';
-        const user = document.getElementById('target_u').value;
-        const pass = document.getElementById('target_w').value;
-        const db = document.getElementById('target_d').value || 'test';
-        const auth = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
-        const proto = host.includes('mongodb.net') ? 'mongodb+srv' : 'mongodb';
-        const p = proto === 'mongodb+srv' ? '' : `:${port}`;
-        return `${proto}://${auth}${host}${p}/${db}`;
-    }
+        function toggleHistory() {
+            document.getElementById('historyDrawer').classList.toggle('open');
+        }
 
-    // ========= APIs =========
-    async function loadHistory() {
-        const panel = document.getElementById('historyContent');
-        try {
-            const res = await fetch('/api/history');
-            const logs = await res.json();
-            panel.innerHTML = logs.map(l => `
+        function toggleConfig() {
+            const c = document.getElementById('runtimeConfig');
+            c.style.display = c.style.display === 'none' ? 'block' : 'none';
+            // Pre-fill with current values if possible
+            document.getElementById('play_model').value = document.getElementById('selectedAiModel').value;
+            document.getElementById('play_k').value = document.getElementById('cloud_k').value;
+            updatePlayKeyLabel();
+        }
+
+        function updatePlayKeyLabel() {
+            const m = document.getElementById('play_model').value;
+            const l = document.getElementById('playKeyLabel');
+            if (m === 'claude') l.innerText = "Anthropic API Key";
+            else if (m === 'openai') l.innerText = "OpenAI API Key";
+            else l.innerText = "Ollama (Local Default)";
+        }
+
+        async function doUpdateConfig() {
+            const m = document.getElementById('play_model').value;
+            const k = document.getElementById('play_k').value;
+            const btn = event.target;
+            btn.innerText = "Applying...";
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey: k, aiModel: m })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerText = "✅ Config Updated";
+                    document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('play_model').options[document.getElementById('play_model').selectedIndex].text}`;
+                    // Sync back to Step 1 fields
+                    document.getElementById('selectedAiModel').value = m;
+                    document.getElementById('cloud_k').value = k;
+                    setTimeout(() => { btn.innerText = "Apply New Configuration"; toggleConfig(); }, 1000);
+                } else throw new Error(data.error);
+            } catch (e) {
+                btn.innerText = "❌ Error: " + e.message;
+                setTimeout(() => btn.innerText = "Apply New Configuration", 2000);
+            }
+        }
+
+        function updateApiKeyLabel() {
+            const m = document.getElementById('selectedAiModel').value;
+            const l = document.getElementById('apiKeyLabel');
+            const k = document.getElementById('cloud_k');
+            if (m === 'claude') { l.innerText = "Anthropic API Key"; k.placeholder = "sk-ant-..."; }
+            else if (m === 'openai') { l.innerText = "OpenAI API Key"; k.placeholder = "sk-proj-..."; }
+            else { l.innerText = "Ollama (Local Default)"; k.placeholder = "Not required for local"; k.value = "ollama"; }
+        }
+
+        function getUri() {
+            const host = document.getElementById('target_h').value || '127.0.0.1';
+            const port = document.getElementById('target_p').value || '27017';
+            const user = document.getElementById('target_u').value;
+            const pass = document.getElementById('target_w').value;
+            const db = document.getElementById('target_d').value || 'test';
+            const auth = user ? `${encodeURIComponent(user)}:${encodeURIComponent(pass)}@` : '';
+            const proto = host.includes('mongodb.net') ? 'mongodb+srv' : 'mongodb';
+            const p = proto === 'mongodb+srv' ? '' : `:${port}`;
+            return `${proto}://${auth}${host}${p}/${db}`;
+        }
+
+        // ========= APIs =========
+        async function loadHistory() {
+            const panel = document.getElementById('historyContent');
+            try {
+                const res = await fetch('/api/history');
+                const logs = await res.json();
+                panel.innerHTML = logs.map(l => `
                 <div class="history-item">
                     <span class="history-del" onclick="deleteHistory('${l._id}')">✕</span>
                     <div class="time">${new Date(l.timestamp).toLocaleTimeString()}</div>
                     <div class="q">${l.userQuestion}</div>
                 </div>
             `).join('') || '<p style="text-align:center; color:#64748b; font-size:12px; margin-top:20px;">No recent queries.</p>';
-        } catch(e) {}
-    }
-
-    async function deleteHistory(id) {
-        if (!confirm("Remove this entry?")) return;
-        await fetch('/api/history/' + id, { method: 'DELETE' });
-        loadHistory();
-    }
-
-    async function clearHistory() {
-        if (!confirm("Clear all visible history? (Audit log remains safe)")) return;
-        await fetch('/api/history/clear', { method: 'POST' });
-        loadHistory();
-    }
-
-    async function doInit() {
-        const btn = document.getElementById('btnInit');
-        const overlay = document.getElementById('loadingOverlay');
-        const status = document.getElementById('initStatus');
-        
-        btn.disabled = true;
-        overlay.style.display = 'flex';
-        
-        try {
-            const res = await fetch('/api/init', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    targetDatabaseUri: getUri(),
-                    targetDatabaseType: 'mongodb',
-                    cloudApiKey: document.getElementById('cloud_k').value,
-                    selectedAiModel: document.getElementById('selectedAiModel').value,
-                    requireUserApproval: document.getElementById('require_human').checked
-                })
-            });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-
-            document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('selectedAiModel').options[document.getElementById('selectedAiModel').selectedIndex].text}`;
-            await loadSchema();
-            setTimeout(() => { overlay.style.display = 'none'; goPage(2); }, 800);
-        } catch(e) {
-            overlay.style.display = 'none';
-            status.style.display = 'block';
-            status.className = 'status status-err';
-            status.innerText = 'Initialization Error: ' + e.message;
-            btn.disabled = false;
+            } catch (e) { }
         }
-    }
 
-    async function loadSchema() {
-        const res = await fetch('/api/metadata');
-        const data = await res.json();
-        const list = document.getElementById('schemaList');
-        list.innerHTML = data.map(item => `
+        async function deleteHistory(id) {
+            if (!confirm("Remove this entry?")) return;
+            await fetch('/api/history/' + id, { method: 'DELETE' });
+            loadHistory();
+        }
+
+        async function clearHistory() {
+            if (!confirm("Clear all visible history? (Audit log remains safe)")) return;
+            await fetch('/api/history/clear', { method: 'POST' });
+            loadHistory();
+        }
+
+        async function doInit() {
+            const btn = document.getElementById('btnInit');
+            const overlay = document.getElementById('loadingOverlay');
+            const status = document.getElementById('initStatus');
+
+            btn.disabled = true;
+            overlay.style.display = 'flex';
+
+            try {
+                const res = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        targetDatabaseUri: getUri(),
+                        targetDatabaseType: 'mongodb',
+                        cloudApiKey: document.getElementById('cloud_k').value,
+                        selectedAiModel: document.getElementById('selectedAiModel').value,
+                        requireUserApproval: document.getElementById('require_human').checked
+                    })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('currentConfig').innerText = `Connected: MongoDB | ${document.getElementById('selectedAiModel').options[document.getElementById('selectedAiModel').selectedIndex].text}`;
+                await loadSchema();
+                setTimeout(() => { overlay.style.display = 'none'; goPage(2); }, 800);
+            } catch (e) {
+                overlay.style.display = 'none';
+                status.style.display = 'block';
+                status.className = 'status status-err';
+                status.innerText = 'Initialization Error: ' + e.message;
+                btn.disabled = false;
+            }
+        }
+
+        async function loadSchema() {
+            const res = await fetch('/api/metadata');
+            const data = await res.json();
+            const list = document.getElementById('schemaList');
+            list.innerHTML = data.map(item => `
             <div class="col-card" style="${item.isBlacklisted ? 'opacity: 0.6; border-color: #450a0a;' : ''}">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h4>📄 ${item.collectionName}</h4>
@@ -496,174 +979,175 @@ console.log(response.summary);
                 <button class="btn btn-green" style="margin-top:10px; padding:6px 15px; font-size:11px;" onclick="saveSchema('${item._id}')">Save Enrichment</button>
             </div>
         `).join('');
-    }
-
-    async function saveSchema(id) {
-        const btn = event.target;
-        btn.innerText = "Saving...";
-        await fetch('/api/metadata/' + id, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                businessPurpose: document.getElementById('bus_'+id).value,
-                techSchema: document.getElementById('tech_'+id).value,
-                schemaDescription: document.getElementById('desc_'+id).value,
-                limitSize: parseInt(document.getElementById('lim_'+id).value) || 50,
-                forbiddenSyntax: document.getElementById('forb_'+id).value.split(',').map(s => s.trim()).filter(s => s),
-                isBlacklisted: document.getElementById('blk_'+id).checked
-            })
-        });
-        btn.innerText = "✅ Enrichment Saved";
-        if (document.getElementById('blk_'+id).checked) {
-            btn.closest('.col-card').style.opacity = '0.6';
-            btn.closest('.col-card').style.borderColor = '#450a0a';
-        } else {
-            btn.closest('.col-card').style.opacity = '1';
-            btn.closest('.col-card').style.borderColor = '#334155';
         }
-        setTimeout(() => btn.innerText = "Save Enrichment", 1500);
-    }
 
-    async function doAsk() {
-        const q = document.getElementById('question').value;
-        if (!q) return;
-        const btn = document.getElementById('btnAsk');
-        const resBox = document.getElementById('askResult');
-        const tech = document.getElementById('techContent');
-        const appBox = document.getElementById('approvalBox');
-
-        btn.disabled = true;
-        // Append User Message
-        const chat = document.getElementById('askResult');
-        const userMsg = document.createElement('div');
-        userMsg.className = 'msg-user';
-        userMsg.innerText = q;
-        chat.appendChild(userMsg);
-        document.getElementById('question').value = '';
-
-        // Append Loading Indicator
-        const loader = document.createElement('div');
-        loader.id = 'currentLoader';
-        loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">🔍 AI is scanning the map and writing query...</div>';
-        chat.appendChild(loader);
-        
-        autoScroll();
-        appBox.style.display = 'none';
-        tech.innerHTML = `[INPUT]: ${q}\n[STATUS]: Generating query...`;
-
-        try {
-            const res = await fetch('/api/ask', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ question: q })
+        async function saveSchema(id) {
+            const btn = event.target;
+            btn.innerText = "Saving...";
+            await fetch('/api/metadata/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    businessPurpose: document.getElementById('bus_' + id).value,
+                    techSchema: document.getElementById('tech_' + id).value,
+                    schemaDescription: document.getElementById('desc_' + id).value,
+                    limitSize: parseInt(document.getElementById('lim_' + id).value) || 50,
+                    forbiddenSyntax: document.getElementById('forb_' + id).value.split(',').map(s => s.trim()).filter(s => s),
+                    isBlacklisted: document.getElementById('blk_' + id).checked
+                })
             });
-            const data = await res.json();
-            
-            if (data.status === 'PENDING_APPROVAL') {
-                if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-                const status = document.createElement('div');
-                status.innerHTML = `
+            btn.innerText = "✅ Enrichment Saved";
+            if (document.getElementById('blk_' + id).checked) {
+                btn.closest('.col-card').style.opacity = '0.6';
+                btn.closest('.col-card').style.borderColor = '#450a0a';
+            } else {
+                btn.closest('.col-card').style.opacity = '1';
+                btn.closest('.col-card').style.borderColor = '#334155';
+            }
+            setTimeout(() => btn.innerText = "Save Enrichment", 1500);
+        }
+
+        async function doAsk() {
+            const q = document.getElementById('question').value;
+            if (!q) return;
+            const btn = document.getElementById('btnAsk');
+            const resBox = document.getElementById('askResult');
+            const tech = document.getElementById('techContent');
+            const appBox = document.getElementById('approvalBox');
+
+            btn.disabled = true;
+            // Append User Message
+            const chat = document.getElementById('askResult');
+            const userMsg = document.createElement('div');
+            userMsg.className = 'msg-user';
+            userMsg.innerText = q;
+            chat.appendChild(userMsg);
+            document.getElementById('question').value = '';
+
+            // Append Loading Indicator
+            const loader = document.createElement('div');
+            loader.id = 'currentLoader';
+            loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">🔍 AI is scanning the map and writing query...</div>';
+            chat.appendChild(loader);
+
+            autoScroll();
+            appBox.style.display = 'none';
+            tech.innerHTML = `[INPUT]: ${q}\n[STATUS]: Generating query...`;
+
+            try {
+                const res = await fetch('/api/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q })
+                });
+                const data = await res.json();
+
+                if (data.status === 'PENDING_APPROVAL') {
+                    if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                    const status = document.createElement('div');
+                    status.innerHTML = `
                     <div class="status" style="background: rgba(234, 179, 8, 0.1); border: 1px solid #eab308; color:#facc15; margin-top:0;">
                         Query logic ready. Waiting for signature.
                     </div>`;
-                chat.appendChild(status);
-                
-                tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}`;
-                document.getElementById('pendingQueryId').value = data.queryId;
-                appBox.style.display = 'block';
-                document.getElementById('btnExecute').disabled = false;
-            } else if (data.status === 'EXECUTED_SUCCESS') {
-                renderResult(data);
-            } else if (data.status === 'BLOCKED') {
-                if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-                const blo = document.createElement('div');
-                blo.innerHTML = `
+                    chat.appendChild(status);
+
+                    tech.innerHTML = `[PROPOSED QUERY]:\n\n${data.query}`;
+                    document.getElementById('pendingQueryId').value = data.queryId;
+                    appBox.style.display = 'block';
+                    document.getElementById('btnExecute').disabled = false;
+                } else if (data.status === 'EXECUTED_SUCCESS') {
+                    renderResult(data);
+                } else if (data.status === 'BLOCKED') {
+                    if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                    const blo = document.createElement('div');
+                    blo.innerHTML = `
                     <div class="status status-err" style="margin-top:0;">
                         ${data.message || 'Query Blocked'}
                     </div>`;
-                chat.appendChild(blo);
-            } else {
+                    chat.appendChild(blo);
+                } else {
+                    if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+                    const err = document.createElement('div');
+                    err.innerHTML = `<div class="status status-err" style="margin-top:0;">${data.message || data.error}</div>`;
+                    chat.appendChild(err);
+                }
+            } catch (e) {
                 if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
                 const err = document.createElement('div');
-                err.innerHTML = `<div class="status status-err" style="margin-top:0;">${data.message || data.error}</div>`;
+                err.innerHTML = `<div class="status status-err" style="margin-top:0;">${e.message}</div>`;
                 chat.appendChild(err);
+            } finally {
+                btn.disabled = false;
+                autoScroll();
+                loadHistory();
             }
-        } catch(e) {
-            if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-            const err = document.createElement('div');
-            err.innerHTML = `<div class="status status-err" style="margin-top:0;">${e.message}</div>`;
-            chat.appendChild(err);
-        } finally {
-            btn.disabled = false;
-            autoScroll();
-            loadHistory();
         }
-    }
 
-    function renderResult(data) {
-        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-        const chat = document.getElementById('askResult');
-        const tech = document.getElementById('techContent');
-        
-        const aiMsg = document.createElement('div');
-        aiMsg.className = 'msg-ai';
-        aiMsg.innerHTML = `
+        function renderResult(data) {
+            if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+            const chat = document.getElementById('askResult');
+            const tech = document.getElementById('techContent');
+
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'msg-ai';
+            aiMsg.innerHTML = `
             <div class="summary-card" style="margin-bottom:0;">
                 <h4>AI Insights Output</h4>
                 <p>${data.summary || 'Database returned results successfully.'}</p>
             </div>
         `;
-        chat.appendChild(aiMsg);
-        autoScroll();
-        const rawJson = JSON.stringify(data.data, null, 2);
-        const displayJson = rawJson.length > 5000 ? rawJson.slice(0, 5000) + "\n\n... [TRUNCATED FOR UI PERFORMANCE] ..." : rawJson;
-        tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${displayJson}`;
-    }
+            chat.appendChild(aiMsg);
+            autoScroll();
+            const rawJson = JSON.stringify(data.data, null, 2);
+            const displayJson = rawJson.length > 5000 ? rawJson.slice(0, 5000) + "\n\n... [TRUNCATED FOR UI PERFORMANCE] ..." : rawJson;
+            tech.innerHTML = `[SUCCESS]\n[RECORDS]: ${data.data?.length || 0}\n\n[RAW DATA JSON]:\n${displayJson}`;
+        }
 
-    function autoScroll() {
-        const c = document.getElementById('chatContainer');
-        c.scrollTop = c.scrollHeight;
-    }
+        function autoScroll() {
+            const c = document.getElementById('chatContainer');
+            c.scrollTop = c.scrollHeight;
+        }
 
-    async function doExecute() {
-        const id = document.getElementById('pendingQueryId').value;
-        const btn = document.getElementById('btnExecute');
-        const chat = document.getElementById('askResult');
-        
-        btn.disabled = true;
-        btn.innerText = "Executing On-Chain...";
-        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-        
-        const loader = document.createElement('div');
-        loader.id = 'currentLoader';
-        loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">⚡ Confirming signature and pulling data...</div>';
-        chat.appendChild(loader);
-        autoScroll();
+        async function doExecute() {
+            const id = document.getElementById('pendingQueryId').value;
+            const btn = document.getElementById('btnExecute');
+            const chat = document.getElementById('askResult');
 
-        try {
-            const res = await fetch('/api/execute/' + id, { method: 'POST' });
-            const data = await res.json();
-            renderResult(data);
-        } catch(e) {
-            resBox.innerHTML = `<div class="status status-err">${e.message}</div>`;
-        } finally {
+            btn.disabled = true;
+            btn.innerText = "Executing On-Chain...";
+            if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+
+            const loader = document.createElement('div');
+            loader.id = 'currentLoader';
+            loader.innerHTML = '<div class="status status-info pulse" style="margin-top:0;">⚡ Confirming signature and pulling data...</div>';
+            chat.appendChild(loader);
+            autoScroll();
+
+            try {
+                const res = await fetch('/api/execute/' + id, { method: 'POST' });
+                const data = await res.json();
+                renderResult(data);
+            } catch (e) {
+                resBox.innerHTML = `<div class="status status-err">${e.message}</div>`;
+            } finally {
+                document.getElementById('approvalBox').style.display = 'none';
+                btn.innerText = "Execute Proposed Query";
+                loadHistory();
+            }
+        }
+
+        function doReject() {
             document.getElementById('approvalBox').style.display = 'none';
-            btn.innerText = "Execute Proposed Query";
+            if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
+            const chat = document.getElementById('askResult');
+            const err = document.createElement('div');
+            err.innerHTML = '<div class="status status-err" style="margin-top:0;">Terminated. User rejected the query.</div>';
+            chat.appendChild(err);
+            autoScroll();
+            updateCost();
             loadHistory();
         }
-    }
-
-    function doReject() {
-        document.getElementById('approvalBox').style.display = 'none';
-        if (document.getElementById('currentLoader')) document.getElementById('currentLoader').remove();
-        const chat = document.getElementById('askResult');
-        const err = document.createElement('div');
-        err.innerHTML = '<div class="status status-err" style="margin-top:0;">Terminated. User rejected the query.</div>';
-        chat.appendChild(err);
-        autoScroll();
-        updateCost();
-        loadHistory();
-    }
-</script>
+    </script>
 </body>
+
 </html>

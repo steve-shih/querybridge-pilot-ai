@@ -1,7 +1,7 @@
 {
-  "name": "dbpilot",
+  "name": "querybridge-pilot-ai",
   "version": "1.0.0",
-  "description": "DataPilot is a secure middleware layer that converts natural language into database queries. It safely bridges the gap between Large Language Models (LLMs) and your databases by enforcing strict security guards, preventing destructive operations and system overloads.",
+  "description": "QueryBridge Pilot AI is a secure middleware layer that converts natural language into database queries. It safely bridges the gap between Large Language Models (LLMs) and your databases by enforcing strict security guards, preventing destructive operations and system overloads.",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
@@ -11,15 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/steve-shih/DBPilot.git"
+    "url": "git+https://github.com/steve-shih/querybridge-pilot-ai.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/steve-shih/DBPilot/issues"
+    "url": "https://github.com/steve-shih/querybridge-pilot-ai/issues"
   },
-  "homepage": "https://github.com/steve-shih/DBPilot#readme",
+  "homepage": "https://github.com/steve-shih/querybridge-pilot-ai#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "cors": "^2.8.6",

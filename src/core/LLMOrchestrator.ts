@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import { Config } from '../config';
 
 export class LLMOrchestrator {
   private openai?: OpenAI;
@@ -14,9 +15,9 @@ export class LLMOrchestrator {
       // Setup OpenAI API (Or Ollama via OpenAI compatible endpoint)
       const openaiConfig: any = { apiKey };
       if (aiModel === 'ollama') {
-         // Placeholder logic for future Ollama expansion which is often locally hosted via OpenAI compatible API
-         openaiConfig.baseURL = "http://127.0.0.1:11434/v1";
-         openaiConfig.apiKey = "ollama";
+        // Placeholder logic for future Ollama expansion which is often locally hosted via OpenAI compatible API
+        openaiConfig.baseURL = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434/v1";
+        openaiConfig.apiKey = "ollama";
       }
       this.openai = new OpenAI(openaiConfig);
     }
@@ -27,14 +28,18 @@ export class LLMOrchestrator {
     const i = Number(inputTokens) || 0;
     const o = Number(outputTokens) || 0;
 
-    // Current rough pricing per 1M tokens (Sonnet 3.5: $3/$15, GPT-4o: $5/$15, 4o-mini: $0.15/$0.6)
+    // Current rough pricing per 1M tokens
+    // Claude 3.5 Sonnet: $3/$15
     if (m.includes('claude-3-5-sonnet')) return (i * 3 / 1000000) + (o * 15 / 1000000);
+    // GPT-4o: $5/$15
+    if (m.includes('gpt-4o') && !m.includes('mini')) return (i * 5 / 1000000) + (o * 15 / 1000000);
+    // GPT-4o-mini: $0.15/$0.6
     if (m.includes('gpt-4o-mini')) return (i * 0.15 / 1000000) + (o * 0.6 / 1000000);
-    if (m.includes('gpt-4o')) return (i * 5 / 1000000) + (o * 15 / 1000000);
+
     return 0; // Local or unknown models
   }
 
-  async describeSchema(collectionName: string, samples: any[]): Promise<{ businessPurpose: string, techSchema: string, schemaDescription: string, relatedCollections: string[], usage: any }> {
+  async describeSchema(collectionName: string, samples: any[], indexes: any[]): Promise<{ businessPurpose: string, techSchema: string, schemaDescription: string, relatedCollections: string[], usage: any }> {
     const prompt = `You are a Senior Database Architect. Analyze the following MongoDB collection and its sample data (latest 10 docs).
 
 Goal: Help a user understand what is inside this database and how to query it.
@@ -47,6 +52,7 @@ Task:
 
 Collection Name: ${collectionName}
 Sample Data: ${JSON.stringify(samples, null, 2)}
+Indexes: ${JSON.stringify(indexes, null, 2)}
 
 Return strictly in JSON format:
 {
@@ -59,54 +65,55 @@ Return strictly in JSON format:
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
-          const mName = "claude-3-5-sonnet-20241022";
-          const response = await this.anthropic.messages.create({
-              model: mName,
-              max_tokens: 2000,
-              system: "You are a DB expert. Formulate your response as a valid JSON object only.",
-              messages: [{ role: "user", content: prompt }]
-          }, { timeout: 25000 });
-          const textBlock = response.content.find((block: any) => block.type === 'text');
-          let text = (textBlock as any)?.text || '{}';
-          
-          usage.inputTokens = response.usage.input_tokens;
-          usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
+        const mName = Config.MODELS.CLAUDE;
+        const response = await this.anthropic.messages.create({
+          model: mName,
+          max_tokens: 2000,
+          system: "You are a DB expert. Formulate your response as a valid JSON object only.",
+          messages: [{ role: "user", content: prompt }]
+        }, { timeout: Config.LLM_TIMEOUT });
+        const textBlock = response.content.find((block: any) => block.type === 'text');
+        let text = (textBlock as any)?.text || '{}';
 
-          text = text.replace(/^```[a-z]*\n?/gm, '').replace(/```$/gm, '').trim();
-          const result = JSON.parse(text);
-          return {
-            businessPurpose: result.businessDescription || '',
-            techSchema: result.technicalSchema || '',
-            schemaDescription: result.schemaDescription || '',
-            relatedCollections: result.relatedCollections || [],
-            usage
-          };
+        usage.inputTokens = response.usage.input_tokens;
+        usage.outputTokens = response.usage.output_tokens;
+        usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
+
+        text = text.replace(/^```[a-z]*\n?/gm, '').replace(/```$/gm, '').trim();
+        const result = JSON.parse(text);
+        return {
+          businessPurpose: result.businessDescription || '',
+          techSchema: result.technicalSchema || '',
+          schemaDescription: result.schemaDescription || '',
+          relatedCollections: result.relatedCollections || [],
+          usage
+        };
       } else if (this.openai) {
-          const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o-mini";
-          const response = await this.openai.chat.completions.create({
-            model: mModel,
-            messages: [{ role: "system", content: "You are a DB expert. Return JSON." }, { role: "user", content: prompt }],
-            response_format: { type: "json_object" }
-          }, { timeout: 25000 });
-          const result = JSON.parse(response.choices[0].message.content || '{}');
-          
-          if (response.usage) {
-            usage.inputTokens = response.usage.prompt_tokens;
-            usage.outputTokens = response.usage.completion_tokens;
-            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
-          }
+        const mModel = this.aiModel === 'ollama' ? Config.MODELS.OLLAMA_FALLBACK : Config.MODELS.GPT4O_MINI;
+        const response = await this.openai.chat.completions.create({
+          model: mModel,
+          messages: [{ role: "system", content: "You are a DB expert. Return JSON." }, { role: "user", content: prompt }],
+          response_format: { type: "json_object" }
+        }, { timeout: Config.LLM_TIMEOUT });
+        const result = JSON.parse(response.choices[0].message.content || '{}');
 
-          return {
-            businessPurpose: result.businessDescription || '',
-            techSchema: result.technicalSchema || '',
-            schemaDescription: result.schemaDescription || '',
-            relatedCollections: result.relatedCollections || [],
-            usage
-          };
+        if (response.usage) {
+          usage.inputTokens = response.usage.prompt_tokens;
+          usage.outputTokens = response.usage.completion_tokens;
+          usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+        }
+
+        return {
+          businessPurpose: result.businessDescription || '',
+          techSchema: result.technicalSchema || '',
+          schemaDescription: result.schemaDescription || '',
+          relatedCollections: result.relatedCollections || [],
+          usage
+        };
       }
     } catch (error) {
       console.error("[LLM] Describe schema error", error);
+      throw error;
     }
     return { businessPurpose: "尚未生成分析。", techSchema: "Unknown.", schemaDescription: "No insight.", relatedCollections: [], usage };
   }
@@ -117,12 +124,14 @@ The query should be executable inside \`db.collection('...').METHOD(...)\`, so r
 
 Allowed Collections and Rich Metadata:
 ${JSON.stringify(metadatas.map(m => ({
-    collection: m.collectionName,
-    purpose: m.businessPurpose,
-    fields: m.techSchema,
-    structure: m.schemaDescription,
-    related: m.relatedCollections
-})), null, 2)}
+      collection: m.collectionName,
+      purpose: m.businessPurpose,
+      fields: m.techSchema,
+      structure: m.schemaDescription,
+      related: m.relatedCollections,
+      indexes: m.indexes,
+      totalDocs: m.totalDocs
+    })), null, 2)}
 
 User Question: ${question}
 
@@ -130,36 +139,37 @@ Instructions:
 1. Examine "structure" for nested objects or arrays.
 2. Examine "fields" for correct data types.
 3. If the user question is NOT related to the database schema, business context provided, or data analysis, return ONLY the string "查詢不到".
-4. Otherwise, generate ONLY the JS query code (e.g. \`db.collection('users').find({ age: { $gt: 18 } })\`). DO NOT append limit.`;
+4. PREFER using indexed fields (listed in "indexes") in the find() or aggregate() filters to ensure performance.
+5. Otherwise, generate ONLY the JS query code (e.g. \`db.collection('users').find({ age: { $gt: 18 } })\`). DO NOT append limit.`;
 
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       let code = '';
       if (this.aiModel === 'claude' && this.anthropic) {
-          const mName = "claude-3-5-sonnet-20241022";
-          const response = await this.anthropic.messages.create({
-              model: mName,
-              max_tokens: 1000,
-              system: "You are an expert MongoDB Query Generator. Output EXACTLY raw query javascript code.",
-              messages: [{ role: "user", content: prompt }]
-          }, { timeout: 25000 });
-          const textBlock = response.content.find((block: any) => block.type === 'text');
-          code = (textBlock as any)?.text || '';
-          usage.inputTokens = response.usage.input_tokens;
-          usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
+        const mName = Config.MODELS.CLAUDE;
+        const response = await this.anthropic.messages.create({
+          model: mName,
+          max_tokens: 1000,
+          system: "You are an expert MongoDB Query Generator. Output EXACTLY raw query javascript code.",
+          messages: [{ role: "user", content: prompt }]
+        }, { timeout: Config.LLM_TIMEOUT });
+        const textBlock = response.content.find((block: any) => block.type === 'text');
+        code = (textBlock as any)?.text || '';
+        usage.inputTokens = response.usage.input_tokens;
+        usage.outputTokens = response.usage.output_tokens;
+        usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
       } else if (this.openai) {
-          const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o";
-          const response = await this.openai.chat.completions.create({
-            model: mModel,
-            messages: [{ role: "system", content: "You are an expert MongoDB Query Generator. Output EXACTLY raw JS queries without backticks." }, { role: "user", content: prompt }]
-          }, { timeout: 25000 });
-          code = response.choices[0].message.content || '';
-          if (response.usage) {
-            usage.inputTokens = response.usage.prompt_tokens;
-            usage.outputTokens = response.usage.completion_tokens;
-            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
-          }
+        const mModel = this.aiModel === 'ollama' ? Config.MODELS.OLLAMA_FALLBACK : Config.MODELS.GPT4O;
+        const response = await this.openai.chat.completions.create({
+          model: mModel,
+          messages: [{ role: "system", content: "You are an expert MongoDB Query Generator. Output EXACTLY raw JS queries without backticks." }, { role: "user", content: prompt }]
+        }, { timeout: Config.LLM_TIMEOUT });
+        code = response.choices[0].message.content || '';
+        if (response.usage) {
+          usage.inputTokens = response.usage.prompt_tokens;
+          usage.outputTokens = response.usage.completion_tokens;
+          usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+        }
       }
       return {
         query: code.replace(/^```[a-z]*|```$/gm, '').trim(),
@@ -181,30 +191,30 @@ Summary:`;
     const usage = { inputTokens: 0, outputTokens: 0, costUSD: 0 };
     try {
       if (this.aiModel === 'claude' && this.anthropic) {
-          const mName = "claude-3-5-sonnet-20241022";
-          const response = await this.anthropic.messages.create({
-              model: mName,
-              max_tokens: 500,
-              system: "You are a helpful data analyst. Summarize results clearly and concisely.",
-              messages: [{ role: "user", content: prompt }]
-          }, { timeout: 25000 });
-          const textBlock = response.content.find((block: any) => block.type === 'text');
-          usage.inputTokens = response.usage.input_tokens;
-          usage.outputTokens = response.usage.output_tokens;
-          usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
-          return { summary: (textBlock as any)?.text || '', usage };
+        const mName = Config.MODELS.CLAUDE;
+        const response = await this.anthropic.messages.create({
+          model: mName,
+          max_tokens: 500,
+          system: "You are a helpful data analyst. Summarize results clearly and concisely.",
+          messages: [{ role: "user", content: prompt }]
+        }, { timeout: Config.LLM_TIMEOUT });
+        const textBlock = response.content.find((block: any) => block.type === 'text');
+        usage.inputTokens = response.usage.input_tokens;
+        usage.outputTokens = response.usage.output_tokens;
+        usage.costUSD = this.calculateCost(mName, usage.inputTokens, usage.outputTokens);
+        return { summary: (textBlock as any)?.text || '', usage };
       } else if (this.openai) {
-          const mModel = this.aiModel === 'ollama' ? "qwen3:8b" : "gpt-4o-mini";
-          const response = await this.openai.chat.completions.create({
-            model: mModel,
-            messages: [{ role: "system", content: "You are a data analyst." }, { role: "user", content: prompt }]
-          }, { timeout: 25000 });
-          if (response.usage) {
-            usage.inputTokens = response.usage.prompt_tokens;
-            usage.outputTokens = response.usage.completion_tokens;
-            usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
-          }
-          return { summary: response.choices[0].message.content || '', usage };
+        const mModel = this.aiModel === 'ollama' ? Config.MODELS.OLLAMA_FALLBACK : Config.MODELS.GPT4O_MINI;
+        const response = await this.openai.chat.completions.create({
+          model: mModel,
+          messages: [{ role: "system", content: "You are a data analyst." }, { role: "user", content: prompt }]
+        }, { timeout: Config.LLM_TIMEOUT });
+        if (response.usage) {
+          usage.inputTokens = response.usage.prompt_tokens;
+          usage.outputTokens = response.usage.completion_tokens;
+          usage.costUSD = this.calculateCost(mModel, usage.inputTokens, usage.outputTokens);
+        }
+        return { summary: response.choices[0].message.content || '', usage };
       }
     } catch (error) {
       console.error("[LLM] Summarize data error", error);
@@ -220,8 +230,8 @@ Summary:`;
     } else {
       const openaiConfig: any = { apiKey };
       if (this.aiModel === 'ollama') {
-         openaiConfig.baseURL = "http://127.0.0.1:11434/v1";
-         openaiConfig.apiKey = "ollama";
+        openaiConfig.baseURL = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434/v1";
+        openaiConfig.apiKey = "ollama";
       }
       this.openai = new OpenAI(openaiConfig);
       this.anthropic = undefined;

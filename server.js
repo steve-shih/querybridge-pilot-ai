@@ -21,7 +21,7 @@ async function startServer() {
 
         // STEP_02 啟動伺服器
         app.listen(PORT, () => {
-            console.log(`🚀 DataPilot MVP running on http://localhost:${PORT}`);
+            console.log(`🚀 querybridge-pilot-ai MVP running on http://localhost:${PORT}`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);

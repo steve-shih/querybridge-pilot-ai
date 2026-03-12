@@ -2,9 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { CollectionMetadata, SystemConfig, AuditLog, connectInternalDB } from '../db/internal';
-import { DBPilotCore } from '../index';
-import dotenv from 'dotenv';
-dotenv.config();
+import { QueryBridgePilotCore } from '../index';
+import { Config } from '../config';
 
 const app = express();
 app.use(cors());
@@ -13,27 +12,27 @@ app.use(express.json());
 // Serve static files using absolute path so it works regardless of CWD
 app.use(express.static(path.join(__dirname, '..', '..', 'src', 'gui', 'public')));
 
-let pilot: DBPilotCore | null = null;
+let pilot: QueryBridgePilotCore | null = null;
 let initialized = false;
 
 // ==================== API: Initialize ====================
 app.post('/api/init', async (req, res) => {
     try {
         const { targetDatabaseUri, targetDatabaseType, cloudApiKey, selectedAiModel, requireUserApproval } = req.body;
-        
+
         if (!targetDatabaseUri) return res.status(400).json({ error: 'Target Database URI is required' });
 
         console.log(`[API] Init request: target=${targetDatabaseUri}, model=${selectedAiModel || 'claude'}`);
 
-        pilot = new DBPilotCore({
-            systemDatabaseUri: 'mongodb://127.0.0.1:27017/DBPilot',
+        pilot = new QueryBridgePilotCore({
+            systemDatabaseUri: Config.INTERNAL_DB_URI,
             targetDatabaseType: targetDatabaseType || 'mongodb',
             targetDatabaseUri: targetDatabaseUri,
             cloudApiKey: cloudApiKey || '',
             selectedAiModel: selectedAiModel || 'claude',
             requireUserApproval: requireUserApproval ?? true
         });
-        
+
         await pilot.initialize();
         initialized = true;
 
@@ -48,7 +47,7 @@ app.post('/api/init', async (req, res) => {
 
         // Return metadata count for confirmation
         const metaCount = await CollectionMetadata.countDocuments();
-        res.json({ message: `DBPilot initialized successfully. ${metaCount} collections explored.` });
+        res.json({ message: `querybridge-pilot-ai initialized successfully. ${metaCount} collections explored.` });
     } catch (e: any) {
         console.error('[API] Init error:', e);
         res.status(500).json({ error: e.message });
@@ -153,12 +152,12 @@ app.put('/api/metadata/:id', async (req, res) => {
 });
 
 // ==================== Start Server ====================
-const PORT = process.env.PORT || 4000;
+const PORT = Config.PORT;
 app.listen(PORT, async () => {
-   try {
-       await connectInternalDB('mongodb://127.0.0.1:27017/DBPilot');
-   } catch (e) {
-       console.error('[DBPilot] Could not pre-connect to internal DB:', e);
-   }
-   console.log(`[GUI Server] Listening on http://localhost:${PORT}`);
+    try {
+        await connectInternalDB(Config.INTERNAL_DB_URI);
+    } catch (e) {
+        console.error('[querybridge-pilot-ai] Could not pre-connect to internal DB:', e);
+    }
+    console.log(`[GUI Server] Listening on http://localhost:${PORT}`);
 });
