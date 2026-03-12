@@ -152,6 +152,5 @@ await pilot.initialize();
 const result = await pilot.ask("找出上個月消費超過 1000 元的客戶");
 console.log(result.summary);
 ```
-
 ---
 © 2026 querybridge-pilot-ai Open Source Project. All rights reserved.
